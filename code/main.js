@@ -10,6 +10,8 @@
 var harvesterFunction = require('harvester');
 var attackerFunction = require('attacker');
 var carrierFunction = require('carrier');
+var spawnFunction = require('spawner');
+var sourceFunction = require('source');
 var harvesterBody = [WORK, MOVE];
 var attackerBody = [MOVE,RANGED_ATTACK];
 var carrierBody = [CARRY, MOVE];
@@ -28,105 +30,72 @@ if (!(Memory.harvesterTicker)) {
 
 
 
-for (var roomName in Game.rooms)
-{
-    for (var spawnName in Game.spawns)
-    {
-        var spawnInitiated = false;
-        
-        // Check to see if there are any allies in distress
-        var creepList = Game.rooms[roomName].find(FIND_MY_CREEPS);
-        var enemiesNear = false;
-        for (var i = 0; i < creepList.length; ++i)
-        {
-            if (creepList[i].areEnemiesNearby()) {
-                console.log("ENEMIES NEAR");
-                enemiesNear = true;
-                break;
-            }
-                
-        }
-        if (enemiesNear) {
-             // We need to spawn an attacker 
-            if (Game.spawns[spawnName].canCreateCreep(attackerBody) == 0 && !spawnInitiated)
-            {
-                console.log("Spawning attacker");
-                var creepName = Game.spawns[spawnName].createCreep(attackerBody, 'Attacker' + Memory.attackerTicker++);
-                Memory.creeps[creepName].role = 'attacker';
-                spawnInitiated = true;
-            }
-        }
-        
-        // First check to make sure all harvesters have carriers
-        var harvesterList = Game.rooms[roomName].find(FIND_MY_CREEPS, {
-            filter: function(possibleHarvester) {
-                if ((possibleHarvester.spawning == false) &&
-                    (possibleHarvester.memory.role == 'harvester') &&
-                    ((!("carrierName" in possibleHarvester.memory)) ||
-                        (Game.creeps[possibleHarvester.memory.carrierName] == null)))
-                            return true;
-                else
-                    return false;
-        }});
-        for (var i = 0; i < harvesterList.length; ++i)
-        {
-            var harvester = harvesterList[i];
-            console.log("carrierId" in harvester.memory);
-            // We need to spawn a carrier for this harvester
-            if (Game.spawns[spawnName].canCreateCreep(carrierBody) == 0 && !spawnInitiated)
-            {
-                console.log(harvester + " has no carrier - spawning carrier");
-                var creepName = Game.spawns[spawnName].createCreep(carrierBody, 'Carrier' + Memory.carrierTicker++);
-                Memory.creeps[creepName].role = 'carrier';
-                Memory.creeps[creepName].harvesterId = harvester.id;
-                harvester.memory.carrierName = creepName;
-                spawnInitiated = true;
-            }
-            
-        }
-        
-        // Check if there are sources that have yet to be harvested
-        var possibleSources = Game.rooms[roomName].find(FIND_SOURCES, {
-                                filter: function(source)
-                                {
-                                    console.log("Judging " + source.id);
-                                    if (source.pos.findInRange(FIND_HOSTILE_CREEPS, 20).length > 0) {
-                                            console.log(source.id + " - bad");
-                                            return false;
-                                    }
-                                    else
-                                        return true;
-                                }});
-        console.log(possibleSources);
-        if (possibleSources.length > 0 && Game.spawns[spawnName].pos.findClosest(possibleSources) != null)
-        {
-            
-            // We need to spawn a harvester for this source
-            var closestSource = Game.spawns[spawnName].pos.findClosest(possibleSources);
-            if (Game.spawns[spawnName].canCreateCreep(harvesterBody) == 0 && !spawnInitiated) 
-            {
-                
-                 console.log("Found a source. Spawning a harvester");
-                var creepName = Game.spawns[spawnName].createCreep(harvesterBody, 'Harvester' + Memory.harvesterTicker++);
-                Memory.creeps[creepName].role = 'harvester';
-                Memory.creeps[creepName].assignedSourceId = closestSource.id;
-                spawnInitiated = true;
-            }
-        }
-        else
-        {
-            // We need to spawn an attacker 
-            if (Game.spawns[spawnName].canCreateCreep(attackerBody) == 0 && !spawnInitiated)
-            {
-                console.log("Spawning attacker");
-                var creepName = Game.spawns[spawnName].createCreep(attackerBody, 'Attacker' + Memory.attackerTicker++);
-                Memory.creeps[creepName].role = 'attacker';
-                spawnInitiated = true;
-            }
-        }
-      
-        
-    }   
+/* Look for sources in need of harvesters */
+for (var roomName in Game.rooms) {
+	var sourceList = Game.rooms[roomName].find(FIND_SOURCES_ACTIVE, {
+		filter: function(possibleSource) {
+			if (possibleSource.pos.findInRange(FIND_HOSTILE_CREEPS, 30).length > 0) {
+				console.log(possibleSource.id  + ' bad because of hostiles');
+				return false;
+			}
+			else
+			{
+				if (sourceFunction.get_free_spots(possibleSource) > 0)
+					return true;
+				else {
+					console.log(possibleSource.id + ' bad because of no free spots');
+					return false;
+				}
+			}
+		}});
+	console.log('count' + sourceList.length);
+	for (var spawn in Game.spawns) {
+		var spawnInQuestion = Game.spawns[spawn];
+		while (sourceList.length > 0) {
+			var closeSource = spawnInQuestion.pos.findClosest(sourceList);
+			sourceList.splice(sourceList.indexOf(closeSource), 1);
+
+			while (sourceFunction.get_free_spots(closeSource) > 0) {
+			var harvester = {
+					'parts' : harvesterBody,
+					'name'  : 'Harvester' + Memory.harvesterTicker++,
+					'memory' : {
+							'role' : 'harvester',
+							'assignedSourceId' : closeSource.id,
+							'carriers' : 0
+						   }
+					};
+
+			spawnFunction.add_to_queue(spawnInQuestion, harvester, false);
+			sourceFunction.add_harvester(closeSource);
+			}
+
+		}
+	}
+}
+
+/* Loop logic: Look for harvesters without carriers */
+for (var roomName in Game.rooms) {
+	var harvesters = Game.rooms[roomName].find(FIND_MY_CREEPS, {
+		filter: function(possibleHarvester) {
+			if (possibleHarvester.spawning == false && possibleHarvester.memory.carriers == 0)
+				return true;
+			else
+				return false;
+		}});
+	for (var i = 0; i < harvesters.length; ++i) {
+		console.log('Looking into carrier for ' + harvesters[i].name);
+		var carrier = {
+					'parts' : carrierBody,
+					'name'  : 'Carrier' + Memory.carrierTicker++,
+					'memory': {
+							'role' : 'carrier',
+							'harvesterId' : harvesters[i].id
+						  }
+			      };
+		spawnFunction.add_to_queue(harvesters[i].pos.findClosest(FIND_MY_SPAWNS), carrier, true);
+		harvesters[i].memory.carriers++;
+	}
 }
     
 
@@ -140,6 +109,6 @@ for (var creep in Game.creeps) {
     else if (Memory.creeps[creep].role == 'carrier')
         carrierFunction(creepObject);
 }
-
-
-
+for (var spawnName in Game.spawns) {
+	spawnFunction.produce_next_queue(Game.spawns[spawnName]);
+}
