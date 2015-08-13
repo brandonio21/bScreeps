@@ -29,7 +29,8 @@ if (!(Memory.harvesterTicker)) {
     Memory.ticker = 0;
     Memory.energyTracking = {};
     Memory.energyTracking.energyPerFive = 0;
-    Memory.energyTracking.begEnergy = 0;
+    Memory.energyTracking.income = 0;
+    Memory.energyTracking.outcome = 0;
 }
 
 
@@ -140,16 +141,16 @@ for (var roomName in Game.rooms) {
 	/* Tally energy */
 	if (Memory.ticker == 5)
 	{
-		var spawnList = Game.rooms[roomName].find(FIND_MY_SPAWNS);
-		var totalEnergy = 0;
-		for (var i = 0; i < spawnList.length; ++i) 
-			totalEnergy += spawnList[i].energy;
-		Memory.energyTracking.energyPerFive = (totalEnergy - Memory.energyTracking.begEnergy) / 5;
-		Memory.energyTracking.begEnergy = totalEnergy;
+		Memory.energyTracking.energyPerFive = 
+			(parseFloat(Memory.energyTracking.income) 
+			 - parseFloat(Memory.energyTracking.outcome)) / 5.0;
 		Memory.ticker = 0;
+		Memory.energyTracking.income = 0;
+		Memory.energyTracking.outcome = 0;
 		console.log("ENERGY/5: " + Memory.energyTracking.energyPerFive);
 	}
 	Memory.ticker += 1;
+	Memory.energyTracking.income += 1;
 }
     
 

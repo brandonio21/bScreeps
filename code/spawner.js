@@ -1,3 +1,4 @@
+var cost = require('cost');
 module.exports = 
 {
 	initialize_queue: function(spawn) {
@@ -31,7 +32,9 @@ module.exports =
 			console.log(' canproducing: ' + thingToSpawn.memory.role);
 			spawn.createCreep(thingToSpawn.parts, 
 				thingToSpawn.name, thingToSpawn.memory);
+			var usedEnergy = cost.getCost(thingToSpawn.parts);
 			Memory.spawns[spawn.name].queue.shift();
+			Memory.energyTracking.outcome += usedEnergy;
 		}
 	}
 }

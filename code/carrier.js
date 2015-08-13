@@ -14,7 +14,10 @@
 		// Move back to base!
 		var spawnLoc = creep.pos.findClosest(FIND_MY_SPAWNS);
 		creep.moveTo(spawnLoc);
+		var energy = creep.carry.energy;
 		creep.transferEnergy(spawnLoc);
+		Memory.energyTracking.income += energy;
+		
 	     }
 	     else
 	     {
