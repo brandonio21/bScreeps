@@ -15,6 +15,7 @@ var sourceFunction = require('source');
 var harvesterBody = [WORK, MOVE];
 var attackerBody = [MOVE,RANGED_ATTACK];
 var carrierBody = [CARRY, MOVE];
+require('proto')();
 
 Creep.prototype.areEnemiesNearby = function() 
 {
@@ -139,11 +140,12 @@ for (var roomName in Game.rooms) {
 
 
 	/* Tally energy */
-	if (Memory.ticker == 5)
+	if (Memory.ticker == 10)
 	{
 		Memory.energyTracking.energyPerFive = 
 			(parseFloat(Memory.energyTracking.income) 
-			 - parseFloat(Memory.energyTracking.outcome)) / 5.0;
+			 - parseFloat(Memory.energyTracking.outcome)) / 10.0;
+
 		Memory.ticker = 0;
 		Memory.energyTracking.income = 0;
 		Memory.energyTracking.outcome = 0;
@@ -152,17 +154,10 @@ for (var roomName in Game.rooms) {
 	Memory.ticker += 1;
 	Memory.energyTracking.income += 1;
 }
-    
-
 
 for (var creep in Game.creeps) {
     var creepObject = Game.creeps[creep];
-    if (Memory.creeps[creep].role == 'harvester')
-        harvesterFunction.action(creepObject);
-    else if (Memory.creeps[creep].role == 'attacker')
-        attackerFunction.action(creepObject);
-    else if (Memory.creeps[creep].role == 'carrier')
-        carrierFunction.action(creepObject);
+    creepObject.doTick();
 }
 for (var spawnName in Game.spawns) {
 	spawnFunction.produce_next_queue(Game.spawns[spawnName]);

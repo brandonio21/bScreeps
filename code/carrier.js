@@ -5,13 +5,15 @@
  * You can import it from another modules like this:
  * var mod = require('carrier'); // -> 'a thing'
  */
+var structure_manager = require('structure_manager');
  module.exports = {
 	 action: function(creep)
 	 {
 	     if (creep.carry.energy >= creep.carryCapacity)
 	     {
 		 console.log(creep.name + " is full! returning to base");
-		// Move back to base!
+
+		// Go back to spawn!
 		var spawnLoc = creep.pos.findClosest(FIND_MY_SPAWNS);
 		creep.moveTo(spawnLoc);
 		var energy = creep.carry.energy;

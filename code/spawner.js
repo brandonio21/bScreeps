@@ -36,5 +36,5 @@ module.exports =
 			Memory.spawns[spawn.name].queue.shift();
 			Memory.energyTracking.outcome += usedEnergy;
 		}
-	}
+	},
 }
