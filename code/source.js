@@ -37,5 +37,11 @@ module.exports =
 		console.log("AH");
 		this.initialize_memory(source);
 		Memory.sources[source.id].harvesterCount++;
+	},
+
+	subtract_harvester: function(source) {
+		this.initialize_memory(source);
+		Memory.sources[source.id].harvesterCount--;
+
 	}
 }
