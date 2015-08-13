@@ -26,7 +26,12 @@ if (!(Memory.harvesterTicker)) {
     Memory.harvesterTicker = 0;
     Memory.attackerTicker = 0;
     Memory.carrierTicker = 0;
+    Memory.ticker = 0;
+    Memory.energyTracking = {};
+    Memory.energyTracking.energyPerFive = 0;
+    Memory.energyTracking.begEnergy = 0;
 }
+
 
 /* Handle screep deaths before anything */
 for (var i in Memory.creeps) {
@@ -79,7 +84,7 @@ for (var roomName in Game.rooms) {
 							'assignedSourceId' : closeSource.id,
 							'carriers' : 0,
 							'neededCarriers' : 
-								Math.ceil(closeSource.pos.getRangeTo(spawnInQuestion) / 7)
+								Math.ceil(closeSource.pos.getRangeTo(spawnInQuestion) / 10)
 
 						   }
 					};
@@ -130,6 +135,21 @@ for (var roomName in Game.rooms) {
 			harvesters[i].memory.carriers++;
 		}
 	}
+
+
+	/* Tally energy */
+	if (Memory.ticker == 5)
+	{
+		var spawnList = Game.rooms[roomName].find(FIND_MY_SPAWNS);
+		var totalEnergy = 0;
+		for (var i = 0; i < spawnList.length; ++i) 
+			totalEnergy += spawnList[i].energy;
+		Memory.energyTracking.energyPerFive = (totalEnergy - Memory.energyTracking.begEnergy) / 5;
+		Memory.energyTracking.begEnergy = totalEnergy;
+		Memory.ticker = 0;
+		console.log("ENERGY/5: " + Memory.energyTracking.energyPerFive);
+	}
+	Memory.ticker += 1;
 }
     
 

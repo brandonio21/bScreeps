@@ -53,6 +53,7 @@
 	 death: function(creepMemoryChunk) {
 		var harvesterId = creepMemoryChunk.harvesterId;
 		var associatedHarvester = Game.getObjectById(harvesterId);
-		Memory.creeps[associatedHarvester.name].carriers--;
+		if (associatedHarvester)
+			Memory.creeps[associatedHarvester.name].carriers--;
 	 }
  };
